@@ -1,0 +1,900 @@
+Version 2.0.3 - September 17, 2011
+
+- Various modes of failure to set fanspeeds and adl values have been addressed
+and auto-fan should work now on most hardware, and possibly other values
+which previously would not have worked.
+- Fixed a crash that can occur on switching pools due to longpoll thread races.
+- Use ATISTREAMSDKROOT if available at build time.
+- Fanspeed management is returned to the driver default on exit instead of
+whatever it was when cgminer was started.
+- Logging of events deemed WARNING or ERR now will display even during
+periods where menu input is being awaited on.
+
+
+Version 2.0.2 - September 11, 2011
+
+- Exit cleanly if we abort before various threads are set up or if they no
+longer exist.
+- Fix a rare crash in HASH_DEL due to using different mutexes to protect the
+data.
+- Flag devices that have never started and don't allow enabling of devices
+without restarting them.
+- Only force the adapter speed to high if we've flagged this device as being
+managed.
+- Flag any devices with autofan or autogpu as being managed.
+- Use a re-entrant value to store what fanspeed we're trying to set in case the
+card doesn't support small changes.     Force it to a multiple of 10% if it
+fails on trying to speed up the fan.
+- Do not bother resetting values to old ones if changes to GPU parameters report
+failure, instead returning a failure code only if the return value from get()
+differs.
+- Remove redundant check.
+- Only display supported values from fanspeed on change settings.
+- Missing bracket from output.
+- Display fan percentage on devices that only support reporting percent and not
+RPM.
+- Properly substitute DLOPEN flags to build with ADL support when -ldl is needed
+and not when opencl is not found.
+
+
+Version 2.0.1 - September 9, 2011
+
+- Fix building on 32bit glibc with dlopen with -lpthread and -ldl
+- ByteReverse is not used and the bswap opcode breaks big endian builds. Remove
+it.
+- Ignore whether the display is active or not since only display enabled devices
+work this way, and we skip over repeat entries anwyay.
+- Only reset values on exiting if we've ever modified them.
+- Flag adl as active if any card is successfully activated.
+- Add a thermal cutoff option as well and set it to 95 degrees by default.
+- Change the fan speed by only 5% if it's over the target temperature but less
+than the hysteresis value to minimise overshoot down in temperature.
+- Add a --no-adl option to disable ADL monitoring and GPU settings.
+- Only show longpoll received delayed message at verbose level.
+- Allow temperatures greater than 100 degrees.
+- We should be passing a float for the remainder of the vddc values.
+- Implement accepting a range of engine speeds as well to allow a lower limit to
+be specified on the command line.
+- Allow per-device fan ranges to be set and use them in auto-fan mode.
+- Display which GPU has overheated in warning message.
+- Allow temperature targets to be set on a per-card basis on the command line.
+- Display fan range in autofan status.
+- Setting the hysteresis is unlikely to be useful on the fly and doesn't belong
+in the per-gpu submenu.
+- With many cards, the GPU summaries can be quite long so use a terse output
+line when showing them all.
+- Use a terser device status line to show fan RPM as well when available.
+- Define max gpudevices in one macro.
+- Allow adapterid 0 cards to enumerate as a device as they will be non-AMD
+cards, and enable ADL on any AMD card.
+- Do away with the increasingly confusing and irrelevant total queued and
+efficiency measures per device.
+- Only display values in the log if they're supported and standardise device log
+line printing.
+
+
+Version 2.0.0 - September 6, 2011
+
+Major feature upgrade - GPU monitoring, (over)clocking and fan control for ATI
+GPUs.
+
+New command line switches:
+--auto-fan-     Automatically adjust all GPU fan speeds to maintain a target
+temperature
+--auto-gpu-     Automatically adjust all GPU engine clock speeds to maintain
+a target temperature
+--gpu-engine <arg>  Set the GPU engine (over)clock in Mhz - one value for all or
+separate by commas for per card.
+--gpu-fan <arg>     Set the GPU fan percentage - one value for all or separate
+by commas for per card.
+--gpu-memclock <arg> Set the GPU memory (over)clock in Mhz - one value for all
+or separate by commas for per card.
+--gpu-powertune <arg> Set the GPU powertune percentage - one value for all or
+separate by commas for per card.
+--gpu-vddc <arg>    Set the GPU voltage in Volts - one value for all or separate
+by commas for per card.
+--temp-hysteresis <arg> Set how much the temperature can fluctuate outside
+limits when automanaging speeds (default: 3)
+--temp-overheat <arg> Set the overheat temperature when automatically managing
+fan and GPU speeds (default: 85)
+--temp-target <arg> Set the target temperature when automatically managing fan
+and GPU speeds (default: 75)
+
+- Implement ATI ADL support for GPU parameter monitoring now and setting later
+(temp, fan, clocks etc.).
+- Check for the presence of the ADL header files in ADL_SDK.
+- Import adl_functions.h from amd overdrive ctrl.
+- Implement a setup function that tries to detect GPUs that support the ADL and
+link in the parameters into the gpus struct.
+- Put a summary of monitoring information from the GPU menu.
+- Implement changing memory speed and voltage on the fly.
+- Implement fan speed setting.
+- Minor corrections to set fan speed by percentage.
+- Make sure to read off the value in RPM only.
+- Implement auto fanspeed adjustment to maintain a target temperature and
+fanspeed below 85%, with an overheat check that will speed the fan up to 100%.
+- Add an --auto-fan command line option to allow all GPUs to have autofan
+enabled from startup.
+- Add a gpu autotune option which adjusts GPU speed to maintain a target
+temperature within the bounds of the default GPU speed and any overclocking set.
+- Avoid a dereference if the longpoll thread doesn't exist.
+- Clean up by setting performance profiles and fan settings to startup levels on
+exit.
+- Add a small amount of hysteresis before lowering clock speed.
+- Allow target, overheat and hysteresis temperatures to be set from command
+line.
+- Combine all stats collating into one function to avoid repeating function
+calls on each variable.
+- Add gpu statistics to debugging output via the watchdog thread.
+- Implement menus to change temperature limits.
+- Implement setting the GPU engine clock speed of all devices or each device as
+a comma separated value.
+- Implement setting the GPU memory clock speed of all devices or each device as
+a comma separated value.
+- Implement setting the GPU voltage of all devices or each device as a comma
+separated value.
+- Implement setting the GPU fan speed of all devices or each device as a comma
+separated value.
+- Add support for monitoring powertune setting.
+- Implement changing of powertune value from the GPU change settings menu.
+- Get the value of powertune in get_stats.
+- Implement setting the GPU powertune value of all devices or each device as a
+comma separated value.
+- Remove the safety checks in speed setting since confirmation is done first in
+the menu, then show the new current values after a short pause.
+- Force the speed to high on startup and restore it to whatever the setting was
+on exit.
+- Add temperature to standard output where possible and use more compact output.
+- Move and print at the same time in curses to avoid random trampling display
+errors.
+- Update the status window only from the watchdog thread, do not rewrite the top
+status messages and only refresh once all the status window is complete,
+clearing the window each time to avoid corruption.
+- Set a safe starting fan speed if we're automanaging the speeds.
+- Provide locking around all adl calls to prevent races.
+- Lower profile settings cannot be higher than higher profile ones so link any
+drops in settings.
+- Add new needed text files to distribution.
+- Queue requests ignoring the number of staged clones since they get discarded
+very easily leading to false positives for pool not providing work fast enough.
+- Include libgen.h in opt.c to fix win32 compilation warnings.
+- Fix compilation warning on win32.
+- Add the directory name from the arguments cgminer was called from as well to
+allow it running from a relative pathname.
+- Add a --disable-adl option to configure and only enable it if opencl support
+exists.
+- Retry before returning a failure to get upstream work as a failure to avoid
+false positives for pool dead.
+- Retry also if the decoding of work fails.
+- Use the presence of X-Roll-Ntime in the header as a bool for exists unless N
+is found in the response.
+
+
+Version 1.6.2 - September 2, 2011
+
+- Add --failover-only option to not leak work to backup pools when the primary
+pool is lagging.
+- Change recommendation to intensity 9 for dedicated miners.
+- Fix the bouncing short term value by allowing it to change dynamically when
+the latest value is very different from the rolling value, but damp the change
+when it gets close.
+- Use the curses_lock to protect the curses_active variable and test it under
+lock.
+- Go back to requesting work 2/3 of the way through the current scantime with
+CPU mining as reports of mining threads running out of work have occurred with
+only 5 seconds to retrieve work.
+- Add start and stop time scheduling for regular time of day running or once off
+start/stop options.
+- Print summary on quit modes.
+- Put some sanity checks on the times that can be input.
+- Give a verbose message when no active pools are found and pause before
+exiting.
+- Add verbose message when a GPU fails to initialise, and disable the correct
+GPU.
+- Cryptopp asm32 was not correctly updated to the incremental nonce code so the
+hash counter was bogus.
+- Get rid of poorly executed curl check.
+- If curl does not have sockopts, do not try to compile the
+json_rpc_call_sockopt_cb function, making it possible to build against older
+curl libraries.
+- Most people expect /usr/local when an unspecified prefix is used so change to
+that.
+- Rename localgen occasions to getwork fail occasions since localgen is
+unrelated now.
+
+
+Version 1.6.1 - August 29, 2011
+
+- Copy cgminer path, not cat it.
+- Switching between redrawing windows does not fix the crash with old
+libncurses, so redraw both windows, but only when the window size hasn't
+changed.
+- Reinstate minimum 1 extra in queue to make it extremely unlikely to ever have
+0 staged work items and any idle time.
+- Return -1 if no input is detected from the menu to prevent it being
+interpreted as a 0.
+- Make pthread, libcurl and libcurses library checks mandatory or fail.
+- Add a --disable-opencl configure option to make it possible to override
+detection of opencl and build without GPU mining support.
+- Confusion over the variable name for number of devices was passing a bogus
+value which likely was causing the zero sized binary issue.
+- cgminer no longer supports default url user and pass so remove them.
+- Don't show value of intensity since it's dynamic by default.
+- Add options to explicitly enable CPU mining or disable GPU mining.
+- Convert the opt queue into a minimum number of work items to have queued
+instead of an extra number to decrease risk of getting idle devices without
+increasing risk of higher rejects.
+- Statify tv_sort.
+- Check for SSE2 before trying to build 32 bit SSE2 assembly version. Prevents
+build failure when yasm is installed but -msse2 is not specified.
+- Add some defines to configure.ac to enable exporting of values and packaging,
+and clean up output.
+- Give convenient summary at end of ./configure.
+- Display version information and add --version command line option, and make
+sure we flush stdout.
+- Enable curses after the mining threads are set up so that failure messages
+won't be lost in the curses interface.
+- Disable curses after inputting a pool if we requested no curses interface.
+- Add an option to break out after successfully mining a number of accepted
+shares.
+- Exit with a failed return code if we did not reach opt_shares.
+- The cpu mining work data can get modified before we copy it if we submit it
+async, and the sync submission is not truly sync anyway, so just submit it sync.
+
+
+Version 1.6.0 - August 26, 2011
+
+- Make restarting of GPUs optional for systems that hang on any attempt to
+restart them.     Fix DEAD status by comparing it to last live time rather than
+last attempted restart time since that happens every minute.
+- Move staged threads to hashes so we can sort them by time.
+- Create a hash list of all the blocks created and search them to detect when a
+new block has definitely appeared, using that information to detect stale work
+and discard it.
+- Update configure.ac for newer autoconf tools.
+- Use the new hashes directly for counts instead of the fragile counters
+currently in use.
+- Update to latest sse2 code from cpuminer-ng.
+- Allow LP to reset block detect and block detect lp flags to know who really
+came first.
+- Get start times just before mining begins to not have very slow rise in
+average.
+- Add message about needing one server.
+- We can queue all the necessary work without hitting frequent stales now with
+the time and string stale protection active all the time.     This prevents a
+pool being falsely labelled as not providing work fast enough.
+- Include uthash.h in distro.
+- Implement SSE2 32 bit assembly algorithm as well.
+- Fail gracefully if unable to open the opencl files.
+- Make cgminer look in the install directory for the .cl files making make
+install work correctly.
+- Allow a custom kernel path to be entered on the command line.
+- Bump threshhold for lag up to maximum queued but no staged work.
+- Remove fragile source patching for bitalign, vectors et. al and simply pass it
+with the compiler options.
+- Actually check the value returned for the x-roll-ntime extension to make sure
+it isn't saying N.
+- Prevent segfault on exit for when accessory threads don't exist.
+- Disable curl debugging with opt protocol since it spews to stderr.
+
+
+Version 1.5.8 - August 23, 2011
+
+- Minimise how much more work can be given in cpu mining threads each interval.
+- Make the fail-pause progressively longer each time it fails until the network
+recovers.
+- Only display the lagging message if we've requested the work earlier.
+- Clean up the pool switching to not be dependent on whether the work can roll
+or not by setting a lagging flag and then the idle flag.
+- Only use one thread to determine if a GPU is sick or well, and make sure to
+reset the sick restart attempt time.
+- The worksize was unintentionally changed back to 4k by mistake, this caused a
+slowdown.
+
+
+Version 1.5.7 - August 22, 2011
+
+- Fix a crash with --algo auto
+- Test at appropriate target difficulty now.
+- Add per-device statics log output with --per-device-stats
+- Fix breakage that occurs when 1 or 4 vectors are chosen on new phatk.
+- Make rolltime report debug level only now since we check it every work
+item.
+- Add the ability to enable/disable per-device stats on the fly and match
+logging on/off.
+- Explicitly tell the compiler to retain the program to minimise the chance of
+the zero sized binary errors.
+- Add one more instruction to avoid one branch point in the common path in the
+cl return code. Although this adds more ALUs overall and more branch points, the
+common path code has the same number of ALUs and one less jmp, jmps being more
+expensive.
+- Explicitly link in ws2_32 on the windows build and update README file on how
+to compile successfully on windows.
+- Release cl resources should the gpu mining thread abort.
+- Attempt to restart a GPU once every minute while it's sick.
+- Don't kill off the reinit thread if it fails to init a GPU but returns safely.
+- Only declare a GPU dead if there's been no sign of activity from the reinit
+thread for 10 mins.
+- Never automatically disable any pools but just specify them as idle if they're
+unresponsive at startup.
+- Use any longpoll available, and don't disable it if switching to a server that
+doesn't have it. This allows you to mine solo, yet use the longpoll from a pool
+even if the pool is the backup server.
+- Display which longpoll failed and don't free the ram for lp_url since it
+belongs to the pool hdr path.
+- Make the tcp setsockopts unique to linux in the hope it allows freebsd et. al
+to compile.
+
+
+Version 1.5.6 - August 17, 2011
+
+- New phatk and poclbm kernels. Updated phatk to be in sync with latest 2.2
+courtesy of phateus. Custom modified to work best with cgminer.
+- Updated output buffer code to use a smaller buffer with the kernels.
+- Clean up the longpoll management to ensure the right paths go to the right
+pool and display whether we're connected to LP or not in the status line.
+
+
+Version 1.5.5 - August 16, 2011
+
+- Rework entirely the GPU restart code. Strike a balance between code that
+re-initialises the GPU entirely so that soft hangs in the code are properly
+managed, but if a GPU is completely hung, the thread restart code fails
+gracefully, so that it does not take out any other code or devices. This will
+allow cgminer to keep restarting GPUs that can be restarted, but continue
+mining even if one or more GPUs hangs which would normally require a reboot.
+- Add --submit-stale option which submits all shares, regardless of whether they
+would normally be considered stale.
+- Keep options in alphabetical order.
+- Probe for slightly longer for when network conditions are lagging.
+- Only display the CPU algo when we're CPU mining.
+- As we have keepalives now, blaming network flakiness on timeouts appears to
+have been wrong.     Set a timeout for longpoll to 1 hour, and most other
+network connectivity to 1 minute.
+- Simplify output code and remove HW errors from CPU stats.
+- Simplify code and tidy output.
+- Only show cpu algo in summary if cpu mining.
+- Log summary at the end as per any other output.
+- Flush output.
+- Add a linux-usb-cgminer guide courtesy of Kano.
+
+
+Version 1.5.4 - August 14, 2011
+
+- Add new option: --monitor <cmd> Option lets user specify a command <cmd> that
+will get forked by cgminer on startup. cgminer's stderr output subsequently gets
+piped directly to this command.
+- Allocate work from one function to be able to initialise variables added
+later.
+- Add missing fflush(stdout) for --ndevs and conclusion summary.
+- Preinitialise the devices only once on startup.
+- Move the non cl_ variables into the cgpu info struct to allow creating a new
+cl state on reinit, preserving known GPU variables.
+- Create a new context from scratch in initCQ in case something was corrupted to
+maximise our chance of succesfully creating a new worker thread. Hopefully this
+makes thread restart on GPU failure more reliable, without hanging everything
+in the case of a completely wedged GPU.
+- Display last initialised time in gpu management info, to know if a GPU has
+been re-initialised.
+- When pinging a sick cpu, flush finish and then ping it in a separate thread in
+the hope it recovers without needing a restart, but without blocking code
+elsewhere.
+- Only consider a pool lagging if we actually need the work and we have none
+staged despite queue requests stacking up. This decreases significantly the
+amount of work that leaks to the backup pools.
+- The can_roll function fails inappropriately in stale_work.
+- Only put the message that a pool is down if not pinging it every minute. This
+prevents cgminer from saying pool down at 1 minute intervals unless in debug
+mode.
+- Free all work in one place allowing us to perform actions on it in the future.
+- Remove the extra shift in the output code which was of dubious benefit. In
+fact in cgminer's implementation, removing this caused a miniscule speedup.
+- Test each work item to see if it can be rolled instead of per-pool and roll
+whenever possible, adhering to the 60 second timeout. This makes the period
+after a longpoll have smaller dips in throughput, as well as requiring less
+getworks overall thus increasing efficiency.
+- Stick to rolling only work from the current pool unless we're in load balance
+mode or lagging to avoid aggressive rolling imitating load balancing.
+- If a work item has had any mining done on it, don't consider it discarded
+work.
+
+
+Version 1.5.3 - July 30, 2011
+
+- Significant work went into attempting to make the thread restart code robust
+to identify sick threads, tag them SICK after 1 minute, then DEAD after 5
+minutes of inactivity and try to restart them. Instead of re-initialising the
+GPU completely, only a new cl context is created to avoid hanging the rest of
+the GPUs should the dead GPU be hung irrevocably.
+- Use correct application name in syslog.
+- Get rid of extra line feeds.
+- Use pkg-config to check for libcurl version
+- Implement per-thread getwork count with proper accounting to not over-account
+queued items when local work replaces it.
+- Create a command queue from the program created from source which allows us
+to flush the command queue in the hope it will not generate a zero sized binary
+any more.
+- Be more willing to get work from the backup pools if the work is simply being
+queued faster than it is being retrieved.
+
+
+Version 1.5.2 - July 28, 2011
+
+- Restarting a hung GPU can hang the rest of the GPUs so just declare it dead
+and provide the information in the status.
+- The work length in the miner thread gets smaller but doesn't get bigger if
+it's under 1 second.     This could end up leading to CPU under-utilisation and
+lower and lower hash rates.     Fix it by increasing work length if it drops
+under 1 second.
+- Make the "quiet" mode still update the status and display errors, and add a
+new --real-quiet option which disables all output and can be set once while
+running.
+- Update utility and efficiency figures when displaying them.
+- Some Intel HD graphics support the opencl commands but return errors since
+they don't support opencl. Don't fail with them, just provide a warning and
+disable GPU mining.
+- Add http:// if it's not explicitly set for URL entries.
+- Log to the output file at any time with warnings and errors, instead of just
+when verbose mode is on.
+- Display the correct current hash as per blockexplorer, truncated to 16
+characters, with just the time.
+
+
+Version 1.5.1 - July 27, 2011
+
+- Two redraws in a row cause a crash in old libncurses so just do one redraw
+using the main window.
+- Don't adjust hash_div only up for GPUs. Disable hash_div adjustment for GPUs.
+- Only free the thread structures if the thread still exists.
+- Update both windows separately, but not at the same time to prevent the double
+refresh crash that old libncurses has.     Do the window resize check only when
+about to redraw the log window to minimise ncurses cpu usage.
+- Abstract out the decay time function and use it to make hash_div a rolling
+average so it doesn't change too abruptly and divide work in chunks large enough
+to guarantee they won't overlap.
+- Sanity check to prove locking.
+- Don't take more than one lock at a time.
+- Make threads report out when they're queueing a request and report if they've
+failed.
+- Make cpu mining work submission asynchronous as well.
+- Properly detect stale work based on time from staging and discard instead of
+handing on, but be more lax about how long work can be divided for up to the
+scantime.
+- Do away with queueing work separately at the start and let each thread grab
+its own work as soon as it's ready.
+- Don't put an extra work item in the queue as each new device thread will do so
+itself.
+- Make sure to decrease queued count if we discard the work.
+- Attribute split work as local work generation.
+- If work has been cloned it is already at the head of the list and when being
+reinserted into the queue it should be placed back at the head of the list.
+- Dividing work is like the work is never removed at all so treat it as such.
+However the queued bool needs to be reset to ensure we *can* request more work
+even if we didn't initially.
+- Make the display options clearer.
+- Add debugging output to tq_push calls.
+- Add debugging output to all tq_pop calls.
+
+
+Version 1.5.0 - July 26, 2011
+
+- Increase efficiency of slow mining threads such as CPU miners dramatically. Do
+this by detecting which threads cannot complete searching a work item within the
+scantime and then divide up a work item into multiple smaller work items.
+Detect the age of the work items and if they've been cloned before to prevent
+doing the same work over. If the work is too old to be divided, then see if it
+can be time rolled and do that to generate work. This dramatically decreases the
+number of queued work items from a pool leading to higher overall efficiency
+(but the same hashrate and share submission rate).
+- Don't request work too early for CPUs as CPUs will scan for the full
+opt_scantime anyway.
+- Simplify gpu management enable/disable/restart code.
+- Implement much more accurate rolling statistics per thread and per gpu and
+improve accuracy of rolling displayed values.
+- Make the rolling log-second average more accurate.
+- Add a menu to manage GPUs on the fly allowing you to enable/disable GPUs or
+try restarting them.
+- Keep track of which GPUs are alive versus enabled.
+- Start threads for devices that are even disabled, but don't allow them to
+start working.
+- The last pool is when we are low in total_pools, not active_pools.
+- Make the thread restart do a pthread_join after disabling the device, only
+re-enabling it if we succeed in restarting the thread. Do this from a separate
+thread so as to not block any other code.This will allow cgminer to continue
+even if one GPU hangs.
+- Try to do every curses manipulation under the curses lock.
+- Only use the sockoptfunction if the version of curl is recent enough.
+
+
+Version 1.4.1 - July 24, 2011
+
+- Do away with GET for dealing with longpoll forever. POST is the one that works
+everywhere, not the other way around.
+- Detect when the primary pool is lagging and start queueing requests on backup
+pools if possible before needing to roll work.
+- Load balancing puts more into the current pool if there are disabled pools.
+Fix.
+- Disable a GPU device should the thread fail to init.
+- Out of order command queue may fail on osx. Try without if it fails.
+- Fix possible dereference on blank inputs during input_pool.
+- Defines missing would segfault on --help when no sse mining is built in.
+- Revert "Free up resources/stale compilers." - didn't help.
+- Only try to print the status of active devices or it would crash.
+- Some hardware might benefit from the less OPS so there's no harm in leaving
+kernel changes that do that apart from readability of the code.
+
+Version 1.4.0 - July 23, 2011
+
+- Feature upgrade: Add keyboard input during runtime to allow modification of
+and viewing of numerous settings such as adding/removing pools, changing
+multipool management strategy, switching pools, changing intensiy, verbosity,
+etc. with a simple keypress menu system.
+- Free up resources/stale compilers.
+- Kernels are safely flushed in a way that allows out of order execution to
+work.
+- Sometimes the cl compiler generates zero sized binaries and only a reboot
+seems to fix it.
+- Don't try to stop/cancel threads that don't exist.
+- Only set option to show devices and exit if built with opencl support.
+- Enable curses earlier and exit with message in main for messages to not be
+lost in curses windows.
+- Make it possible to enter server credentials with curses input if none are
+specified on the command line.
+- Abstract out a curses input function and separate input pool function to allow
+for live adding of pools later.
+- Remove the nil arguments check to allow starting without parameters.
+- Disable/enable echo & cbreak modes.
+- Add a thread that takes keyboard input and allow for quit, silent, debug,
+verbose, normal, rpc protocol debugging and clear screen options.
+- Add pool option to input and display current pool status, pending code to
+allow live changes.
+- Add a bool for explicit enabling/disabling of pools.
+- Make input pool capable of bringing up pools while running.
+- Do one last check of the work before submitting it.
+- Implement the ability to live add, enable, disable, and switch to pools.
+- Only internally test for block changes when the work matches the current pool
+to prevent interleaved block change timing on multipools.
+- Display current pool management strategy to enable changing it on the fly.
+- The longpoll blanking of the current_block data may not be happening before
+the work is converted and appears to be a detected block change.     Blank the
+current block be
+- Make --no-longpoll work again.
+- Abstract out active pools count.
+- Allow the pool strategy to be modified on the fly.
+- Display pool information on the fly as well.
+- Add a menu and separate out display options.
+- Clean up the messy way the staging thread communicates with the longpoll
+thread to determine who found the block first.
+- Make the input windows update immediately instead of needing a refresh.
+- Allow log interval to be set in the menu.
+- Allow scan settings to be modified at runtime.
+- Abstract out the longpoll start and explicitly restart it on pool change.
+- Make it possible to enable/disable longpoll.
+- Set priority correctly on multipools.     Display priority and alive/dead
+information in display_pools.
+- Implement pool removal.
+- Limit rolltime work generation to 10 iterations only.
+- Decrease testing log to info level.
+- Extra refresh not required.
+- With huge variation in GPU performance, allow intensity to go from -10 to +10.
+- Tell getwork how much of a work item we're likely to complete for future
+splitting up of work.
+- Remove the mandatory work requirement at startup by testing for invalid work
+being passed which allows for work to be queued immediately.     This also
+removes the requirem
+- Make sure intensity is carried over to thread count and is at least the
+minimum necessary to work.
+- Unlocking error on retry. Locking unnecessary anyway so remove it.
+- Clear log window from consistent place. No need for locking since logging is
+disabled during input.
+- Cannot print the status of threads that don't exist so just queue enough work
+for the number of mining threads to prevent crash with -Q N.
+- Update phatk kernel to one with new parameters for slightly less overhead
+again.     Make the queue kernel parameters call a function pointer to select
+phatk or poclbm.
+- Make it possible to select the choice of kernel on the command line.
+- Simplify the output part of the kernel. There's no demonstrable advantage from
+more complexity.
+- Merge pull request #18 from ycros/cgminer
+- No need to make leaveok changes win32 only.
+- Build support in for all SSE if possible and only set the default according to
+machine capabilities.
+- Win32 threading and longpoll keepalive fixes.
+- Win32: Fix for mangled output on the terminal on exit.
+
+
+Version 1.3.1 - July 20, 2011
+
+- Feature upgrade; Multiple strategies for failover. Choose from default which
+now falls back to a priority order from 1st to last, round robin which only
+changes pools when one is idle, rotate which changes pools at user-defined
+intervals, and load-balance which spreads the work evenly amongst all pools.
+- Implement pool rotation strategy.
+- Implement load balancing algorithm by rotating requests to each pool.
+- Timeout on failed discarding of staged requests.
+- Implement proper flagging of idle pools, test them with the watchdog thread,
+and failover correctly.
+- Move pool active test to own function.
+- Allow multiple strategies to be set for multipool management.
+- Track pool number.
+- Don't waste the work items queued on testing the pools at startup.
+- Reinstate the mining thread watchdog restart.
+- Add a getpoll bool into the thread information and don't restart threads stuck
+waiting on work.
+- Rename the idlenet bool for the pool for later use.
+- Allow the user/pass userpass urls to be input in any order.
+- When json rpc errors occur they occur in spits and starts, so trying to limit
+them with the comms error bool doesn't stop a flood of them appearing.
+- Reset the queued count to allow more work to be queued for the new pool on
+pool switch.
+
+Version 1.3.0 - July 19, 2011
+
+- Massive infrastructure update to support pool failover.
+- Accept multiple parameters for url, user and pass and set up structures of
+pool data accordingly.
+- Probe each pool for what it supports.
+- Implement per pool feature support according to rolltime support as
+advertised by server.
+- Do switching automatically based on a 300 second timeout of locally generated
+work or 60 seconds of no response from a server that doesn't support rolltime.
+- Implement longpoll server switching.
+- Keep per-pool data and display accordingly.
+- Make sure cgminer knows how long the pool has actually been out for before
+deeming it a prolonged outage.
+- Fix bug with ever increasing staged work in 1.2.8 that eventually caused
+infinite rejects.
+- Make warning about empty http requests not show by default since many
+servers do this regularly.
+
+
+Version 1.2.8 - July 18, 2011
+
+- More OSX build fixes.
+- Add an sse4 algorithm to CPU mining.
+- Fix CPU mining with other algorithms not working.
+- Rename the poclbm file to ensure a new binary is built since.
+- We now are guaranteed to have one fresh work item after a block change and we
+should only discard staged requests.
+- Don't waste the work we retrieve from a longpoll.
+- Provide a control lock around global bools to avoid racing on them.
+- Iterating over 1026 nonces when confirming data from the GPU is old code
+and unnecessary and can lead to repeats/stales.
+- The poclbm kernel needs to be updated to work with the change to 4k sized
+output buffers.
+- longpoll seems to work either way with post or get but some servers prefer
+get so change to httpget.
+
+
+Version 1.2.7 - July 16, 2011
+
+- Show last 8 characters of share submitted in log.
+- Display URL connected to and user logged in as in status.
+- Display current block and when it was started in the status line.
+- Only pthread_join the mining threads if they exist as determined by
+pthread_cancel and don't fail on pthread_cancel.
+- Create a unique work queue for all getworks instead of binding it to thread 0
+to avoid any conflict over thread 0's queue.
+- Clean up the code to make it clear it's watchdog thread being messaged to
+restart the threads.
+- Check the current block description hasn't been blanked pending the real
+new current block data.
+- Re-enable signal handlers once the signal has been received to make it
+possible to kill cgminer if it fails to shut down.
+- Disable restarting of CPU mining threads pending further investigation.
+- Update longpoll messages.
+- Add new block data to status line.
+- Fix opencl tests for osx.
+- Only do local generation of work if the work item is not stale itself.
+- Check for stale work within the mining threads and grab new work if
+positive.
+- Test for idle network conditions and prevent threads from being restarted
+by the watchdog thread under those circumstances.
+- Make sure that local work generation does not continue indefinitely by
+stopping it after 10 minutes.
+- Tweak the kernel to have a shorter path using a 4k buffer and a mask on the
+nonce value instead of a compare and loop for a shorter code path.
+- Allow queue of zero and make that default again now that we can track how
+work is being queued versus staged. This can decrease reject rates.
+- Queue precisely the number of mining threads as longpoll_staged after a
+new block to not generate local work.
+
+
+Version 1.2.6 - July 15, 2011
+
+- Put a current system status line beneath the total work status line
+- Fix a counting error that would prevent cgminer from correctly detecting
+situations where getwork was failing - this would cause stalls sometimes
+unrecoverably.
+- Limit the maximum number of requests that can be put into the queue which
+otherwise could get arbitrarily long during a network outage.
+- Only count getworks that are real queue requests.
+
+
+Version 1.2.5 - July 15, 2011
+
+- Conflicting -n options corrected
+- Setting an intensity with -I disables dynamic intensity setting
+- Removed option to manually disable dynamic intensity
+- Improve display output
+- Implement signal handler and attempt to clean up properly on exit
+- Only restart threads that are not stuck waiting on mandatory getworks
+- Compatibility changes courtesy of Ycros to build on mingw32 and osx
+- Explicitly grab first work item to prevent false positive hardware errors
+due to working on uninitialised work structs
+- Add option for non curses --text-only output
+- Ensure we connect at least once successfully before continuing to retry to
+connect in case url/login parameters were wrong
+- Print an executive summary when cgminer is terminated
+- Make sure to refresh the status window
+
+Versions -> 1.2.4
+
+- Con Kolivas - July 2011. New maintainership of code under cgminer name.
+- Massive rewrite to incorporate GPU mining.
+- Incorporate original oclminer c code.
+- Rewrite gpu mining code to efficient work loops.
+- Implement per-card detection and settings.
+- Implement vector code.
+- Implement bfi int patching.
+- Import poclbm and phatk ocl kernels and use according to hardware type.
+- Implement customised optimised versions of opencl kernels.
+- Implement binary kernel generation and loading.
+- Implement preemptive asynchronous threaded work gathering and pushing.
+- Implement variable length extra work queues.
+- Optimise workloads to be efficient miners instead of getting lots of extra
+  work.
+- Implement total hash throughput counters, per-card accepted, rejected and
+  hw error count.
+- Staging and watchdog threads to prevent fallover.
+- Stale and reject share guarding.
+- Autodetection of new blocks without longpoll.
+- Dynamic setting of intensity to maintain desktop interactivity.
+- Curses interface with generous statistics and information.
+- Local generation of work (xroll ntime) when detecting poor network
+connectivity.
+
+Version 1.0.2
+
+- Linux x86_64 optimisations - Con Kolivas
+- Optimise for x86_64 by default by using sse2_64 algo
+- Detects CPUs and sets number of threads accordingly
+- Uses CPU affinity for each thread where appropriate
+- Sets scheduling policy to lowest possible
+- Minor performance tweaks
+
+Version 1.0.1 - May 14, 2011
+
+- OSX support
+
+Version 1.0 - May 9, 2011
+
+- jansson 2.0 compatibility
+- correct off-by-one in date (month) display output
+- fix platform detection
+- improve yasm configure bits
+- support full URL, in X-Long-Polling header
+
+Version 0.8.1 - March 22, 2011
+
+- Make --user, --pass actually work
+
+- Add User-Agent HTTP header to requests, so that server operators may
+  more easily identify the miner client.
+
+- Fix minor bug in example JSON config file
+
+Version 0.8 - March 21, 2011
+
+- Support long polling: http://deepbit.net/longpolling.php
+
+- Adjust max workload based on scantime (default 5 seconds,
+  or 60 seconds for longpoll)
+
+- Standardize program output, and support syslog on Unix platforms
+
+- Suport --user/--pass options (and "user" and "pass" in config file),
+  as an alternative to the current --userpass
+
+Version 0.7.2 - March 14, 2011
+
+- Add port of ufasoft's sse2 assembly implementation (Linux only)
+  This is a substantial speed improvement on Intel CPUs.
+
+- Move all JSON-RPC I/O to separate thread.  This reduces the
+  number of HTTP connections from one-per-thread to one, reducing resource
+  usage on upstream bitcoind / pool server.
+
+Version 0.7.1 - March 2, 2011
+
+- Add support for JSON-format configuration file.  See example
+  file example-cfg.json.  Any long argument on the command line
+  may be stored in the config file.
+- Timestamp each solution found
+- Improve sha256_4way performance.  NOTE: This optimization makes
+  the 'hash' debug-print output for sha256_way incorrect.
+- Use __builtin_expect() intrinsic as compiler micro-optimization
+- Build on Intel compiler
+- HTTP library now follows HTTP redirects
+
+Version 0.7 - February 12, 2011
+
+- Re-use CURL object, thereby reuseing DNS cache and HTTP connections
+- Use bswap_32, if compiler intrinsic is not available
+- Disable full target validation (as opposed to simply H==0) for now
+
+Version 0.6.1 - February 4, 2011
+
+- Fully validate "hash < target", rather than simply stopping our scan
+  if the high 32 bits are 00000000.
+- Add --retry-pause, to set length of pause time between failure retries
+- Display proof-of-work hash and target, if -D (debug mode) enabled
+- Fix max-nonce auto-adjustment to actually work.  This means if your
+  scan takes longer than 5 seconds (--scantime), the miner will slowly
+  reduce the number of hashes you work on, before fetching a new work unit.
+
+Version 0.6 - January 29, 2011
+
+- Fetch new work unit, if scanhash takes longer than 5 seconds (--scantime)
+- BeeCee1's sha256 4way optimizations
+- lfm's byte swap optimization (improves via, cryptopp)
+- Fix non-working short options -q, -r
+
+Version 0.5 - December 28, 2010
+
+- Exit program, when all threads have exited
+- Improve JSON-RPC failure diagnostics and resilience
+- Add --quiet option, to disable hashmeter output.
+
+Version 0.3.3 - December 27, 2010
+
+- Critical fix for sha256_cryptopp 'cryptopp_asm' algo
+
+Version 0.3.2 - December 23, 2010
+
+- Critical fix for sha256_via
+
+Version 0.3.1 - December 19, 2010
+
+- Critical fix for sha256_via
+- Retry JSON-RPC failures (see --retry, under "minerd --help" output)
+
+Version 0.3 - December 18, 2010
+
+- Add crypto++ 32bit assembly implementation
+- show version upon 'minerd --help'
+- work around gcc 4.5.x bug that killed 4way performance
+
+Version 0.2.2 - December 6, 2010
+
+- VIA padlock implementation works now
+- Minor build and runtime fixes
+
+Version 0.2.1 - November 29, 2010
+
+- avoid buffer overflow when submitting solutions
+- add Crypto++ sha256 implementation (C only, ASM elided for now)
+- minor internal optimizations and cleanups
+
+Version 0.2 - November 27, 2010
+
+- Add script for building a Windows installer
+- improve hash performance (hashmeter) statistics
+- add tcatm 4way sha256 implementation
+- Add experimental VIA Padlock sha256 implementation
+
+Version 0.1.2 - November 26, 2010
+
+- many small cleanups and micro-optimizations
+- build win32 exe using mingw
+- RPC URL, username/password become command line arguments
+- remove unused OpenSSL dependency
+
+Version 0.1.1 - November 24, 2010
+
+- Do not build sha256_generic module separately from cpuminer.
+
+Version 0.1 - November 24, 2010
+
+- Initial release.
+
